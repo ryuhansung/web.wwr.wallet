@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="LoginDAO">
+		
+	<select id="getCustInfo" parameterType="com.web.front.mypage.vo.CustVO" resultType="com.web.front.mypage.vo.CustVO">
+		SELECT    DISTINCT
+		USEREMAIL,
+		USERNM,
+		USERPWD,
+		HPHONE,
+		GENDER,
+		AGE,
+		CHGPWD,
+		TESTYN,
+		FUDYN,
+		REGDT,
+		REGEMAIL,
+		UPTDT,
+		UPTEMAIL,
+		USEYN,
+		REGIP,
+		LANGCD,
+		SUBUSEREMAIL,
+		SESSION_ID,
+		SESSION_TIME,
+		SESSION_ID_MOBILE,
+		SESSION_TIME_MOBILE
+
+		FROM (
+
+			SELECT
+					USER_EMAIL USEREMAIL,
+					NVL(CRYPTO_DECRYPT(USER_NM),'') USERNM,
+					USER_PWD USERPWD,
+					HPHONE HPHONE,
+					GENDER GENDER,
+					AGE AGE,
+					CHG_PWD CHGPWD,
+					TEST_YN TESTYN,
+					FUD_YN FUDYN,
+					REG_DT REGDT,
+					REG_EMAIL REGEMAIL,
+					UPT_DT UPTDT,
+					UPT_EMAIL UPTEMAIL,
+					USE_YN USEYN,
+					REG_IP REGIP,
+					LANG_CD LANGCD,
+					SUB_USER_EMAIL SUBUSEREMAIL,
+					SESSION_ID,
+					SESSION_TIME,
+					SESSION_ID_MOBILE,
+					SESSION_TIME_MOBILE
+			FROM
+					TW_10191020
+			WHERE
+		1 = 1
+
+		UNION ALL
+
+			SELECT
+					USER_EMAIL USEREMAIL,
+					NVL(CRYPTO_DECRYPT(USER_NM),'') USERNM,
+					USER_PWD USERPWD,
+					NVL (CRYPTO_DECRYPT (HPHONE), '') AS HPHONE,
+					GENDER GENDER,
+					AGE AGE,
+					CHG_PWD CHGPWD,
+					TEST_YN TESTYN,
+					FUD_YN FUDYN,
+					REG_DT REGDT,
+					REG_EMAIL REGEMAIL,
+					UPT_DT UPTDT,
+					UPT_EMAIL UPTEMAIL,
+					USE_YN USEYN,
+					REG_IP REGIP,
+					LANG_CD LANGCD,
+					SUB_USER_EMAIL SUBUSEREMAIL,
+					SESSION_ID,
+					SESSION_TIME,
+					SESSION_ID_MOBILE,
+					SESSION_TIME_MOBILE
+
+			FROM
+					TF_10191020
+			WHERE
+			1 = 1
+		)
+		WHERE
+		1 = 1
+			<if test='userEmail != null and userEmail != ""'>
+			AND USEREMAIL = #{userEmail}
+			</if>
+			<if test='sessionId != null and sessionId != ""'>
+			AND SESSION_ID = #{sessionId}
+			AND SESSION_TIME <![CDATA[>]]> SYSDATE
+			</if>
+			<if test='sessionIdMobile != null and sessionIdMobile != ""'>
+			AND SESSION_ID_MOBILE = #{sessionIdMobile}
+			AND SESSION_TIME_MOBILE <![CDATA[>]]> SYSDATE
+			</if>
+<!--			<if test='userPwd != null and userPwd != ""'>
+			AND USERPWD = #{userPwd}
+			</if>-->
+	</select>
+
+	<update id="updateUserInfo" parameterType="com.web.front.mypage.vo.CustVO">
+		UPDATE
+			TW_10191020
+		SET
+			hphone = #{hphone}
+		WHERE
+			1 = 1
+			AND USER_EMAIL = #{userEmail}
+	</update>
+
+	<update id="updateSessionData" parameterType="com.web.front.mypage.vo.CustVO">
+		UPDATE
+			TW_10191020
+		SET
+			SESSION_ID = #{sessionId},
+			SESSION_TIME = #{sessionTime}
+		WHERE
+			1 = 1
+			AND USER_EMAIL = #{userEmail}
+	</update>
+
+	<update id="updateSessionDataMobile" parameterType="com.web.front.mypage.vo.CustVO">
+		UPDATE
+			TW_10191020
+		SET
+			SESSION_ID_MOBILE = #{sessionIdMobile},
+			SESSION_TIME_MOBILE = #{sessionTimeMobile}
+		WHERE
+			1 = 1
+			AND USER_EMAIL = #{userEmail}
+	</update>
+
+	<insert id="historyInsert" parameterType="com.web.front.login.vo.LoginHistoryVO">
+		INSERT INTO TW_10171025(
+			IDX_LOGIN,
+			LOGIN_TME,
+			CONN_IP,
+			FAIL_CD,
+			LOGIN_YN,
+			BRWS_CD,
+			OS_CD,
+			USER_EMAIL
+		)
+		VALUES(
+			FN_GEN_KEY('TW_10171025','IDX_LOGIN',''),
+			SYSDATE,
+			#{conn_ip},
+			#{fail_cd},
+			#{login_yn},
+			#{brws_cd},
+			#{os_cd},
+			#{user_email}
+		)
+	</insert>
+
+	<select id="getForeignIpCheck" parameterType="String" resultType="com.web.front.login.vo.ForeignIpVO">
+        SELECT
+           IP,
+           INTERNAL_YN INTERNALYN
+        FROM
+           TW_50171071
+        WHERE
+           IP = #{value}
+    </select>
+
+	<insert id="insertCheckIp" parameterType="com.web.front.login.vo.ForeignIpVO">
+        INSERT INTO
+            TW_50171071
+            (
+            	IP , INTERNAL_YN , REG_DT
+            )
+        VALUES(
+                #{ip} , #{internalYn} , SYSDATE
+             )
+    </insert>
+
+</mapper>

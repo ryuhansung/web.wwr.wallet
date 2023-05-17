@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BoardDAO">
+	<resultMap type="com.web.front.board.vo.BoardVO" id="BoardMAP">
+		<result property="board_id" column="BOARD_ID"/>
+		<result property="content_id" column="CONTENT_ID"/>
+		<result property="board_title" column="BOARD_TITLE"/>
+		<result property="content_msg" column="CONTENT_MSG" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="reg_user" column="REG_USER"/>
+		<result property="reg_dt" column="REG_DT"/>
+		<result property="upt_dt" column="UPT_DT"/>
+		<result property="read_cnt" column="READ_CNT"/>
+		<result property="upt_email" column="UPT_EMAIL"/>
+		<result property="atch_file_id" column="ATCH_FILE_ID"/>
+		<result property="secret_yn" column="SECRET_YN"/>
+		<result property="board_pwd" column="BOARD_PWD"/>
+		<result property="notice_yn" column="NOTICE_YN"/>
+		<result property="notice_to_dt" column="NOTICE_TO_DT"/>
+		<result property="notice_from_dt" column="NOTICE_FROM_DT"/>
+		<result property="user_phone" column="USER_PHONE"/>
+		<result property="user_name" column="USER_NAME"/>
+		<result property="reg_ip" column="REG_IP"/>
+		<result property="cat_id" column="CAT_ID"/>
+		<result property="cat_name" column="CAT_NAME"/>
+		<result property="lang" column="LANGUAGE"/>
+		<result property="reply_yn" column="REPLY_YN"/>
+		<result property="reply_title" column="REPLY_TITLE"/>
+		<result property="reply_msg" column="REPLY_MSG" jdbcType="CLOB" javaType="java.lang.String"/>
+		<result property="reply_id" column="REPLY_ID"/>
+		<result property="reply_dt" column="REPLY_DT"/>
+	</resultMap>
+
+	<select id="getBoardMst" parameterType="com.web.front.board.vo.BoardVO" resultType="com.web.front.board.vo.BoardVO">
+		SELECT
+		    	board_id,
+		    	board_name,
+		    	board_desc,
+		    	reply_yn,
+		    	use_yn,
+		        file_yn,
+		        comment_yn ,
+		        reg_yn,
+		        notice_vw_yn,
+		        notice_cnt,
+		        editor_yn,
+		        writer_yn,
+		        regdate_yn,
+		        newicon_yn,
+		        secret_use_yn,
+		        cat_view_yn,
+		        TO_CHAR(reg_dt, 'YYYY-MM-DD') as reg_dt
+	       FROM
+	        	TB_BOARD_MST
+	       WHERE
+	       	   board_id = #{board_id}
+	      AND use_yn = 'Y'
+	</select>
+
+	<select id="getBoardList" parameterType="com.web.front.board.vo.BoardVO" resultMap="BoardMAP">
+		SELECT A.*
+		FROM (SELECT ROWNUM AS RNUM, TX.*
+		FROM (  SELECT *
+		FROM (SELECT t.board_id,
+		t.content_id,
+		t.board_title,
+		t.content_msg,
+		t.reg_user,
+		TO_CHAR(t.reg_date, 'YYYY-MM-DD') as reg_dt,
+		t.upt_email,
+		TO_CHAR(t.upt_dt, 'YYYY-MM-DD') as  upt_dt,
+		t.read_cnt,
+		t.secret_yn,
+		t.board_pwd,
+		t.notice_yn,
+		t.notice_to_dt,
+		t.notice_from_dt,
+		t.reply_yn,
+		t2.reply_title,
+		t2.reply_msg,
+		t2.reply_id,
+		t.cat_id,
+		t.language as lang,
+        <choose>
+            <when test='lang == "ko"'>
+                t3.cat_name,
+            </when>
+            <otherwise>
+                t3.cat_name_en cat_name,
+            </otherwise>
+        </choose>
+		CASE WHEN LENGTH(t.user_name) = 1 THEN USER_NAME
+		WHEN LENGTH(t.user_name) = 2 THEN
+		(SUBSTR (t.user_name, 1, 1)
+		||LPAD('*', 1, '*')
+		)
+		ELSE
+		(SUBSTR (t.user_name, 1, 1)
+		|| LPAD ('*', LENGTH (t.user_name) - 2, '*')
+		|| SUBSTR (t.user_name, LENGTH (t.user_name), 1))
+		END AS USER_NAME
+		FROM TB_BOARD t , TB_BOARD_REPLY t2 ,TB_BOARD_CAT_DETAIL t3
+		WHERE
+		t.board_id = #{board_id}
+		AND
+		t.content_id = t2.content_id(+)
+		AND
+		t.cat_id = t3.cat_id(+)
+		<if test='cat_view_yn == "Y"'>
+			AND
+			(SELECT DISTINCT CAT_MST_ID FROM TB_BOARD_CAT_LIST t4 WHERE BOARD_ID = #{board_id}) = t3.cat_mst_id
+		</if>
+		AND
+		t.use_yn = 'Y'
+		<if test="cat_id != null and cat_id != ''">
+			AND t.cat_id = #{cat_id}
+		</if>
+		<if test="user_email != null and user_email != ''">
+			AND t.reg_user = #{user_email}
+		</if>
+		<if test="searchBgnDe != null and searchBgnDe != ''">
+			AND t.reg_date BETWEEN TO_DATE(#{searchBgnDe },'YYYY.MM.DD') AND TO_DATE(#{searchEndDe },'YYYY.MM.DD') + 1
+		</if>
+		<if test="searchWrd != null and searchWrd != ''">
+            <choose>
+                <when test="searchCnd == '01'">
+                    AND (UPPER(t.board_title) LIKE '%'||UPPER(#{searchWrd })||'%')
+                </when>
+                <when test="searchCnd == '02'">
+                    AND (UPPER(t.user_name) LIKE '%'||UPPER(#{searchWrd })||'%')
+                </when>
+                <when test="searchCnd == '03'">
+                    AND (t.board_title LIKE '%'||#{searchWrd }||'%' OR t.user_name LIKE '%'||#{searchWrd }||'%')
+                </when>
+                <otherwise>
+                    AND (t.board_title LIKE '%'||#{searchWrd }||'%' OR content_msg LIKE '%'||#{searchWrd }||'%')
+                </otherwise>
+            </choose>
+		</if>
+		AND  t.language = #{lang}
+		) ORDER BY reg_dt DESC , to_number(content_id) DESC
+		) TX
+		) A
+		WHERE
+		A.RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+
+	</select>
+
+	<select id="getBoardListCnt" parameterType="com.web.front.board.vo.BoardVO" resultType="java.lang.Integer">
+		SELECT
+		COUNT(*)
+		FROM (
+		SELECT
+		* FROM (
+		SELECT t.board_id,
+		t.content_id,
+		t.board_title,
+		DBMS_LOB.SUBSTR (t. content_msg, 1500) content_msg,
+		t.reg_user,
+		TO_CHAR(t.reg_date, 'YYYY-MM-DD') as reg_dt,
+		t.upt_email,
+		TO_CHAR(t.upt_dt, 'YYYY-MM-DD') as  upt_dt,
+		t.read_cnt,
+		t.secret_yn,
+		t.board_pwd,
+		t.notice_yn,
+		t.notice_to_dt,
+		t.notice_from_dt,
+		t.reply_yn,
+		t2.reply_title,
+		DBMS_LOB.SUBSTR (t2.reply_msg, 1500)as reply_msg,
+		t2.reply_id,
+		t.cat_id,
+		t.language as lang,
+        <choose>
+            <when test='lang == "ko"'>
+                t3.cat_name,
+            </when>
+            <otherwise>
+                t3.cat_name_en cat_name,
+            </otherwise>
+        </choose>
+		SUBSTR(t.user_name,1,1) || LPAD('*',LENGTH(t.user_name) -2,'*') || SUBSTR(t.user_name,LENGTH(t.user_name),1) as user_name
+		FROM TB_BOARD t , TB_BOARD_REPLY t2 ,TB_BOARD_CAT_DETAIL t3
+		WHERE
+		t.board_id = #{board_id}
+		AND
+		t.content_id = t2.content_id(+)
+		AND
+		t.cat_id = t3.cat_id(+)
+		AND
+		t.use_yn = 'Y'
+		<if test="cat_id != null and cat_id != ''">
+			AND t.cat_id = #{cat_id}
+		</if>
+		<if test='cat_view_yn == "Y"'>
+			AND
+			(SELECT DISTINCT CAT_MST_ID FROM TB_BOARD_CAT_LIST t4 WHERE BOARD_ID = #{board_id}) = t3.cat_mst_id
+		</if>
+		<if test="user_email != null and user_email != ''">
+			AND t.reg_user = #{user_email}
+		</if>
+		<if test="searchBgnDe != null and searchBgnDe != ''">
+			AND t.reg_date BETWEEN TO_DATE(#{searchBgnDe },'YYYY.MM.DD') AND TO_DATE(#{searchEndDe },'YYYY.MM.DD') + 1
+		</if>
+        <if test="searchWrd != null and searchWrd != ''">
+            <choose>
+                <when test="searchCnd == '01'">
+                    AND (UPPER(t.board_title) LIKE '%'||UPPER(#{searchWrd })||'%')
+                </when>
+                <when test="searchCnd == '02'">
+                    AND (UPPER(t.user_name) LIKE '%'||UPPER(#{searchWrd })||'%')
+                </when>
+                <when test="searchCnd == '03'">
+                    AND (t.board_title LIKE '%'||#{searchWrd }||'%' OR t.user_name LIKE '%'||#{searchWrd }||'%')
+                </when>
+                <otherwise>
+                    AND (t.board_title LIKE '%'||#{searchWrd }||'%' OR content_msg LIKE '%'||#{searchWrd }||'%')
+                </otherwise>
+            </choose>
+        </if>
+		AND  t.language = #{lang}
+		)ORDER BY reg_dt DESC
+		) TX
+	</select>
+
+	<select id="getBoardOptionList" parameterType="com.web.front.board.vo.BoardVO" resultType="com.web.front.board.vo.BoardVO">
+       SELECT
+            t1.cat_mst_id,
+            t1.cat_id,
+            <choose>
+                <when test='lang == "ko"'>
+                    t2.cat_name
+                </when>
+                <otherwise>
+                    t2.cat_name_en cat_name
+                </otherwise>
+            </choose>
+        FROM
+            TB_BOARD_CAT_LIST t1 , TB_BOARD_CAT_DETAIL t2
+        WHERE
+            t1.cat_id = t2.cat_id
+		AND
+			t1.cat_mst_id = t2.cat_mst_id
+        AND
+            t1.board_id =  #{board_id}
+        AND
+            t1.use_yn = 'Y'
+        AND
+        	t2.use_yn = 'Y'
+       ORDER BY cat_id
+    </select>
+
+    <select id="getBoardDetail" parameterType="com.web.front.board.vo.BoardVO" resultMap="BoardMAP">
+		SELECT
+			 t1.board_id,
+	         t1.content_id,
+	         t1.board_title,
+	         t1.content_msg,
+	         t1.reg_user,
+			 TO_CHAR(t1.reg_date, 'YYYY-MM-DD') as reg_dt,
+	         t1.upt_dt,
+	         t1.upt_email,
+	         t1.atch_file_id,
+	         t1.reply_yn,
+	         t1.notice_yn,
+	         t1.user_phone,
+	         t1.user_name,
+	         t1.reg_ip,
+	         t1.cat_id,
+            <choose>
+                <when test='lang == "ko"'>
+                    t2.cat_name,
+                </when>
+                <otherwise>
+                    t2.cat_name_en cat_name,
+                </otherwise>
+            </choose>
+	         t1.board_pwd,
+	         t1.language as lang,
+	         t3.reply_title,
+			 t3.reply_msg,
+			 t3.reply_id,
+			 t3.reg_date as reply_dt
+		FROM
+		    TB_BOARD t1, TB_BOARD_CAT_DETAIL t2
+		    ,TB_BOARD_REPLY t3
+		WHERE
+            t1.cat_id = t2.cat_id
+        AND
+			t1.board_id = #{board_id}
+		AND
+			t1.content_id = #{content_id}
+		AND
+			t1.content_id = t3.content_id(+)
+		AND
+			t1.USE_YN = 'Y'
+		<if test='cat_view_yn == "Y"'>
+			AND
+			(SELECT DISTINCT CAT_MST_ID FROM TB_BOARD_CAT_LIST t4 WHERE BOARD_ID = #{board_id}) = t2.cat_mst_id
+		</if>
+		<if test="cat_name != '' and cat_name != null">
+			<choose>
+				<when test='lang == "ko"'>
+					AND
+					t2.cat_name = #{cat_name}
+				</when>
+				<otherwise>
+				    AND
+					t2.cat_name_en = #{cat_name}
+				</otherwise>
+			</choose>
+		</if>
+	</select>
+
+    <insert id="insertBoard"  parameterType="com.web.front.board.vo.BoardVO">
+        INSERT INTO TB_BOARD(
+            content_id,
+            board_id,
+            board_title,
+            content_msg ,
+            board_pwd,
+            reg_user,
+            reply_yn,
+            reg_date,
+            use_yn,
+            notice_yn,
+            secret_yn,
+            user_phone,
+            user_name,
+            cat_id,
+            reg_ip,
+            language
+        )
+        VALUES(
+            (SELECT to_char(NVL(MAX(to_number(content_id)),0)+1) AS content_id  FROM TB_BOARD),
+            #{board_id},
+            #{board_title},
+            #{content_msg},
+            #{board_pwd},
+            #{user_email},
+            'N',
+            SYSDATE,
+            'Y',
+            #{notice_yn},
+            #{secret_yn},
+            #{user_phone},
+            #{user_name},
+            #{cat_id},
+            #{reg_ip},
+            #{lang}
+        )
+    </insert>
+
+    <update id="updateBoard" parameterType="com.web.front.board.vo.BoardVO">
+         UPDATE TB_BOARD SET
+             board_title = #{board_title},
+             content_msg = #{content_msg},
+             upt_email = #{user_email},
+             cat_id = #{cat_id},
+             user_phone = #{user_phone},
+             user_name = #{user_name},
+             upt_ip = #{upt_ip},
+             upt_dt = SYSDATE
+         WHERE board_id = #{board_id}
+         AND content_id = #{content_id}
+    </update>
+
+    <update id="deleteBoard" parameterType="com.web.front.board.vo.BoardVO">
+        UPDATE TB_BOARD SET
+          USE_YN = 'N',
+          upt_dt = SYSDATE
+        WHERE
+          board_id = #{board_id}
+        AND
+          content_id = #{content_id}
+   </update>
+
+	<select id="selectPopupList" resultType="com.web.front.main.vo.PopupVO" parameterType="com.web.front.main.vo.PopupVO">
+	SELECT
+		*
+	FROM(
+			SELECT
+				ROWNUM AS RN
+				,T.*
+				FROM(
+					SELECT
+						POP_CODE,
+						POP_NM,
+						POP_DESC,
+						POP_URL,
+						REPLACE(USE_YN,' ','') AS USE_YN,
+						REG_IP,
+						REG_EMAIL,
+						REG_DT,
+						UPT_IP,
+						UPT_EMAIL,
+						UPT_DT,
+						ATCH_FILE_ID,
+						LANG_CD,
+						DAY_OPEN_YN,
+						SITE_TYPE,
+                        POP_SN
+					FROM TW_10171072
+					WHERE USE_YN = 'Y'
+					AND LANG_CD = #{lang_cd}
+					AND SITE_TYPE = #{site_type}
+					ORDER BY POP_SN DESC
+				)T
+			)TT
+			WHERE TT.RN BETWEEN 1 AND 3
+
+	</select>
+
+	<select id="selectPopupListCnt" resultType="java.lang.Integer" parameterType="com.web.front.main.vo.PopupVO">
+	SELECT
+		COUNT(*)
+	FROM(
+			SELECT
+				ROWNUM AS RN
+				,T.*
+				FROM(
+					SELECT
+						POP_CODE,
+						POP_NM,
+						POP_DESC,
+						POP_URL,
+						REPLACE(USE_YN,' ','') AS USE_YN,
+						REG_IP,
+						REG_EMAIL,
+						REG_DT,
+						UPT_IP,
+						UPT_EMAIL,
+						UPT_DT,
+						ATCH_FILE_ID,
+						LANG_CD,
+						DAY_OPEN_YN,
+						SITE_TYPE,
+                        POP_SN
+					FROM TW_10171072
+					WHERE USE_YN = 'Y'
+					AND LANG_CD = #{lang_cd}
+					AND SITE_TYPE = #{site_type}
+					ORDER BY POP_SN DESC
+				)T
+			)TT
+			WHERE TT.RN BETWEEN 1 AND 3
+
+	</select>
+
+	<select id="selectPopup" resultType="com.web.front.main.vo.PopupVO" parameterType="com.web.front.main.vo.PopupVO">
+		SELECT
+			POP_CODE,
+			POP_NM,
+			POP_DESC,
+			POP_URL,
+			TO_CHAR(STR_DT,'YYYY-MM-DD HH24:MI:SS') AS STR_DT,
+			TO_CHAR(END_DT, 'YYYY-MM-DD HH24:MI:SS') AS END_DT,
+			REPLACE(USE_YN,' ','') AS USE_YN,
+			REG_IP,
+			REG_EMAIL,
+			REG_DT,
+			UPT_IP,
+			UPT_EMAIL,
+			UPT_DT,
+			ATCH_FILE_ID,
+			LANG_CD,
+			DAY_OPEN_YN
+		FROM TW_10171072
+		WHERE POP_CODE  = #{pop_code}
+		AND SITE_TYPE = #{site_type}
+	</select>
+
+	<select id="selectFileSn" resultType="java.lang.String" parameterType="java.lang.String">
+		SELECT
+			NVL(MAX(FILE_SN),0) AS FILE_SN
+		FROM LETTNFILEDETAIL
+		WHERE ATCH_FILE_ID = #{atch_file_id}
+	</select>
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SendDAO">
+
+	<select id="findAddr" parameterType="com.web.front.mypage.vo.CustVO" resultType="com.web.front.wallet.vo.WalletVO">
+		SELECT
+			WLET_ADR addr,
+			CN_KND_CD cnKndCd
+		FROM
+			TW_30191000 T1,
+			TW_10191020 T2
+		WHERE
+			1 = 1
+			AND T1.REG_EMAIL = T2.USER_EMAIL
+			AND T2.HPHONE = #{hphone}
+			AND T1.CN_KND_CD = #{coinNm}
+			AND T1.USE_YN = 'Y'
+			AND T2.USE_YN = 'Y'
+	</select>
+
+	<select id="selectSendLimitAmt" parameterType="com.web.front.send.vo.SendVO" resultType="com.web.front.send.vo.SendVO">
+		SELECT
+			LMT_YN lmtYn,
+			MIN_SEND_LMT minSendLmt,
+			MAX_SEND_LMT maxSendLmt
+		FROM
+			TW_20194001
+		WHERE
+			1 = 1
+			AND CN_KND_CD = #{coinNm}
+			AND LMT_YN = 'Y'
+	</select>
+</mapper>

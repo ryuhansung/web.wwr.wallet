@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WalletDAO">
+
+	<select id="getWalletList" parameterType="com.web.front.wallet.vo.WalletVO" resultType="com.web.front.wallet.vo.WalletVO">
+		SELECT
+		WLET_ADR ADDR ,
+		CN_KND_CD CNKNDCD ,
+		CN_KND_NM coinNm,
+		USER_EMAIL USEREMAIL ,
+		NATN_CODE NATNCODE ,
+		BRH_CODE BRHCODE ,
+		USB_ID USBID ,
+		USB_DIV USBDIV ,
+		USER_DIV USERDIV ,
+		REG_DT REGDT ,
+		REG_EMAIL REGEMAIL ,
+		UPT_DT UPTDT ,
+		UPT_EMAIL UPTEMAIL,
+		SEND_PWD sendPwd,
+		CASE WHEN SEND_PWD is null THEN 'N' ELSE 'Y' END AS hasPwdYn,
+		COIN_TYPE coinType,
+		PRIVATE_KEY privateKey,
+		PUBLIC_KEY publicKey,
+		TOKEN_YN tokenYn
+		FROM
+		TW_30191000
+		WHERE
+		1 = 1
+		AND USE_YN = 'Y'
+		<if test="coinNm != null and coinNm != ''">
+			AND CN_KND_NM = #{coinNm}
+		</if>
+		<if test="cnKndCd != null and cnKndCd != ''">
+			AND CN_KND_CD = #{cnKndCd}
+		</if>
+		<if test="addr != null and addr != ''">
+			AND	WLET_ADR = #{addr}
+		</if>
+		<if test="userEmail != null and userEmail != '' ">
+			AND	USER_EMAIL = #{userEmail}
+		</if>
+		<if test="coinType != null and coinType != '' ">
+			AND	COIN_TYPE = #{coinType}
+		</if>
+	</select>
+
+	<insert id="insertWallet" parameterType="com.web.front.wallet.vo.WalletVO">
+	INSERT INTO TW_30191000 (
+		WLET_ADR,
+		CN_KND_CD,
+		CN_KND_NM,
+		USER_EMAIL,
+		REG_DT,
+		REG_EMAIL,
+		USE_YN,
+		USER_DIV,
+	    COIN_TYPE,
+		PRIVATE_KEY,
+		PUBLIC_KEY,
+		TOKEN_YN
+	) VALUES (
+		#{addr},
+		#{cnKndCd},
+		#{coinNm},
+		#{userEmail},
+		SYSDATE,
+		#{userEmail},
+		'Y',
+		#{userDiv},
+	    #{coinType},
+		#{privateKey},
+		#{publicKey},
+		#{tokenYn}
+	)
+</insert>
+
+	<update id="updateAddrPwd" parameterType="com.web.front.wallet.vo.WalletVO">
+		UPDATE TW_30191000
+		SET
+			SEND_PWD = #{sendPwd},
+			UPT_DT = SYSDATE,
+			UPT_EMAIL = #{userEmail}
+		WHERE
+			1 = 1
+			AND USER_EMAIL = #{userEmail}
+			AND CN_KND_CD = #{cnKndCd}
+			AND WLET_ADR = #{addr}
+			AND USE_YN = 'Y'
+	</update>
+
+	<select id="selectAddrPwdMatch" parameterType="com.web.front.wallet.vo.WalletVO" resultType="Integer">
+		SELECT
+			COUNT(WLET_ADR)
+		FROM
+			TW_30191000
+		WHERE
+			1=1
+			AND CN_KND_CD = #{cnKndCd}
+			AND	WLET_ADR = #{addr}
+			AND	USER_EMAIL = #{userEmail}
+			AND SEND_PWD = #{curPwd}
+			AND USE_YN = 'Y'
+	</select>
+
+	<select id="selectUseCoinList"  parameterType="com.web.front.wallet.vo.WalletVO" resultType="com.web.front.wallet.vo.WalletVO">
+		SELECT
+		COIN_CD AS cnKndCd,
+		COIN_NM AS coinNm,
+		SEND_CMT AS sendCmt,
+		COIN_TYPE AS coinType,
+		TOKEN_YN AS tokenYn
+		FROM
+			TW_20194000
+		WHERE
+		1 = 1
+		AND USE_YN = 'Y'
+		<if test="coinNm != null and coinNm != '' ">
+			AND COIN_NM = #{coinNm}
+		</if>
+		<if test="cnKndCd != null and cnKndCd != '' ">
+			AND COIN_CD = #{cnKndCd}
+		</if>
+		ORDER BY REG_DT DESC
+	</select>
+
+	<select id="getLockMny" parameterType="com.web.front.send.vo.SendVO" resultType="String">
+		SELECT
+			NVL(RTRIM(TO_CHAR(TRUNC(LOCK_MNY,8),'FM99999999990.99999999'), '.'),0) LOCKMNY
+		FROM
+			TW_30191000
+		WHERE
+			1=1
+			AND CN_KND_CD = #{cnKndCd}
+			AND	WLET_ADR = #{fromAddr}
+			AND	USER_EMAIL = #{userEmail}
+			AND USE_YN = 'Y'
+	</select>
+</mapper>

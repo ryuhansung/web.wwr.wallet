@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MailDAO">
+
+	<insert id="insertMailHis" parameterType="com.web.front.mail.vo.mailHistoryVO">
+		INSERT INTO TW_10191011 (
+			SND_CODE,
+			USER_EMAIL,
+			SND_DT,
+			SND_YN,
+			CTNTS_CODE,
+			REG_DT,
+			REG_EMAIL
+		) VALUES (
+			#{sndCode},
+			#{userEmail},
+			SYSDATE,
+			#{sndYn},
+			#{ctntsCode},
+			SYSDATE,
+			#{userEmail}
+		)
+	</insert>
+
+	<select id="getSndCode" parameterType="String" resultType="String">
+		SELECT
+			FN_GEN_KEY('TW_10191011','SND_CODE','')
+		FROM DUAL
+	</select>
+
+	<update id="updateMailHis" parameterType="com.web.front.mail.vo.mailHistoryVO">
+		UPDATE
+			TW_10191011
+		SET
+			SND_YN = #{sndYn},
+			REG_DT = SYSDATE
+		WHERE
+			SND_CODE = #{sndCode}
+	</update>
+
+	<select id="getMailHis" parameterType="com.web.front.mail.vo.mailHistoryVO" resultType="com.web.front.mail.vo.mailHistoryVO">
+		SELECT
+			SND_CODE SNDCODE,
+			USER_EMAIL USEREMAIL,
+			TO_CHAR(SND_DT, 'YYYY/MM/DD HH24:MI:SS') as SNDDT,
+			SND_YN SNDYN,
+			CTNTS_CODE CTNTSCODE,
+			REG_DT REGDT,
+			REG_EMAIL REGEMAIL
+		FROM
+			TW_10191011
+		WHERE
+			1=1
+		AND	USER_EMAIL = #{userEmail}
+		AND SND_CODE = #{sndCode}
+		AND SND_YN = 'Y'
+	</select>
+
+	<update id="updateCertInfo" parameterType="com.web.front.join.vo.JoinAuthVO" >
+		UPDATE
+			TW_10191021
+		SET
+			SMS_CERT_YN = #{smsCertYn},
+			SMS_CERT_DT = SYSDATE,
+			UPT_DT = SYSDATE,
+			UPT_EMAIL = #{userEmail}
+		WHERE
+			1 = 1
+			AND USER_EMAIL = #{userEmail}
+	</update>
+</mapper>

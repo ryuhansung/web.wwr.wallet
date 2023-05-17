@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Thu Aug 16 10:38:20 KST 2012-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FileDAO">
+	<resultMap id="fileList" type="com.web.config.vo.FileVO">
+		<result property="atchFileId" column="ATCH_FILE_ID"/>
+		<result property="fileCn" column="FILE_CN"/>
+		<result property="fileExtsn" column="FILE_EXTSN"/>
+		<result property="fileMg" column="FILE_SIZE"/>
+		<result property="fileSn" column="FILE_SN"/>
+		<result property="fileStreCours" column="FILE_STRE_COURS"/>
+		<result property="orignlFileNm" column="ORIGNL_FILE_NM"/>
+		<result property="streFileNm" column="STRE_FILE_NM"/>
+		<result property="file_id" column="FILE_ID"/>
+		<result property="file_size" column="FILESIZE"/>
+		<result property="file_upload_count" column="FILE_UPLOAD_COUNT"/>
+		<result property="file_path" column="FILE_PATH"/>
+		<result property="file_url" column="FILE_URL"/>
+		<result property="file_prefix" column="FILE_PREFIX"/>
+		<result property="file_type" column="FILE_TYPE"/>
+		<result property="file_web_desc" column="FILE_WEB_DESC"/>
+		<result property="creatDt" column="CREAT_DT"/>			
+	</resultMap>
+
+	<resultMap id="fileDetail" type="com.web.config.vo.FileVO">
+		<result property="atchFileId" column="ATCH_FILE_ID"/>
+		<result property="fileCn" column="FILE_CN"/>
+		<result property="fileExtsn" column="FILE_EXTSN"/>
+		<result property="fileMg" column="FILE_SIZE"/>
+		<result property="fileSn" column="FILE_SN"/>
+		<result property="fileStreCours" column="FILE_STRE_COURS"/>
+		<result property="orignlFileNm" column="ORIGNL_FILE_NM"/>
+		<result property="streFileNm" column="STRE_FILE_NM"/>
+	</resultMap>	
+
+
+ 	<select id="selectFileList" parameterType="com.web.config.vo.FileVO" resultMap="fileList">
+ 	
+			SELECT 
+				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, a.CREAT_DT, a.FILE_ID, b.FILE_SIZE,
+				c.FILE_SIZE AS FILESIZE, c.FILE_UPLOAD_COUNT, c.FILE_PATH, c.FILE_URL, c.FILE_PREFIX, c.FILE_TYPE,
+				c.FILE_WEB_DESC
+			FROM
+				LETTNFILE a, LETTNFILEDETAIL b, DM_UPLOAD_FILE_MASTER c
+			WHERE
+				<!-- a.ATCH_FILE_ID = #{atchFileId} -->
+				a.ATCH_FILE_ID = #{atchFileId,jdbcType=VARCHAR}
+				
+			AND 
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND
+				a.FILE_ID		=	c.FILE_ID
+			AND 
+				a.USE_AT = 'Y'				
+			ORDER BY b.FILE_SN	
+ 		
+ 	</select>
+ 	
+	<insert id="insertFileMaster" parameterType="com.web.config.vo.FileVO">
+
+		INSERT INTO LETTNFILE(ATCH_FILE_ID, CREAT_DT, USE_AT, FILE_ID)
+		VALUES(#{atchFileId},SYSDATE,'Y', #{file_id})			
+	</insert>
+	
+	<select id="testquery" parameterType="com.web.config.vo.FileVO" resultType="int">
+	SELECT COUNT(*) CNT FROM LETTNFILE WHERE ATCH_FILE_ID = #{atchFileId}
+	</select>
+	
+	<insert id="insertFileDetail" parameterType="com.web.config.vo.FileVO">
+			INSERT INTO LETTNFILEDETAIL
+			( ATCH_FILE_ID, FILE_SN, FILE_STRE_COURS, STRE_FILE_NM, 
+			  ORIGNL_FILE_NM, FILE_EXTSN, FILE_SIZE, FILE_CN )
+			VALUES
+			( #{atchFileId}, #{fileSn}, #{fileStreCours}, #{streFileNm}, 
+			  #{orignlFileNm}, #{fileExtsn}, #{fileMg}, #{fileCn} )			
+		
+	</insert>	
+	
+	<update id="updateFileDetail" parameterType="com.web.config.vo.FileVO">
+			UPDATE 
+				LETTNFILEDETAIL 
+			SET 
+				FILE_STRE_COURS 	= #{fileStreCours}
+				,STRE_FILE_NM 		= #{streFileNm}
+				,ORIGNL_FILE_NM		= #{orignlFileNm}
+				,FILE_EXTSN			= #{fileExtsn}
+				,FILE_SIZE			= #{fileMg}
+				,FILE_CN			= #{fileCn}
+			WHERE
+				ATCH_FILE_ID	=	#{atchFileId}
+			AND
+				FILE_SN			=	#{fileSn}				
+	</update>	
+	
+	<delete id="deleteFileDetail" parameterType="com.web.config.vo.FileVO">
+		
+			DELETE FROM LETTNFILEDETAIL
+			WHERE
+				ATCH_FILE_ID = #{atchFileId}
+			AND	
+				FILE_SN = #{fileSn}			
+			
+	</delete>
+	
+	<delete id="deleteFileAll" parameterType="com.web.config.vo.FileVO">
+		
+			DELETE FROM LETTNFILEDETAIL
+			WHERE
+				ATCH_FILE_ID = #{atchFileId}					
+	</delete>
+ 	
+	<select id="getDetailFileCnt" parameterType="com.web.config.vo.FileVO" resultType="java.lang.Integer">
+		
+			SELECT COUNT(*)
+			FROM LETTNFILEDETAIL
+			WHERE ATCH_FILE_ID =  #{atchFileId}		
+		
+	</select> 	
+ 	
+	<delete id="deleteFileId" parameterType="com.web.config.vo.FileVO">
+		
+			DELETE FROM LETTNFILE
+			WHERE
+				ATCH_FILE_ID = #{atchFileId}
+			
+	</delete> 	
+ 	
+	<select id="getMaxFileSN" parameterType="com.web.config.vo.FileVO" resultType="java.lang.Integer">
+		
+			SELECT NVL(MAX(FILE_SN),0)+1 AS FILE_SN
+			FROM LETTNFILEDETAIL
+			WHERE ATCH_FILE_ID =  #{atchFileId}		
+		
+	</select>
+
+ 	<select id="selectFileInf" parameterType="com.web.config.vo.FileVO" resultMap="fileList">
+
+			SELECT 
+				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, a.CREAT_DT, a.FILE_ID, b.FILE_SIZE, 
+				c.FILE_SIZE AS FILESIZE, c.FILE_UPLOAD_COUNT, c.FILE_PATH, c.FILE_URL, c.FILE_PREFIX, c.FILE_TYPE,
+				c.FILE_WEB_DESC
+			FROM
+				LETTNFILE a, LETTNFILEDETAIL b, DM_UPLOAD_FILE_MASTER c
+			WHERE
+				a.ATCH_FILE_ID = #{atchFileId}
+			AND 
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND
+				a.FILE_ID		=	c.FILE_ID
+			AND 
+				a.USE_AT = 'Y'
+			AND 
+				b.FILE_SN = #{fileSn}				
+ 		
+ 	</select>
+
+	<update id="deleteCOMTNFILE" parameterType="com.web.config.vo.FileVO">
+		
+			UPDATE LETTNFILE
+			SET USE_AT = 'N'
+			WHERE ATCH_FILE_ID = #{atchFileId}
+		
+	</update>
+
+ 	<select id="selectFileListByFileNm" parameterType="com.web.config.vo.FileVO" resultMap="fileList">
+ 		
+ 		SELECT * FROM ( SELECT ROWNUM rn, TB.* FROM (
+			SELECT 
+				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT, a.FILE_ID,
+				c.FILE_SIZE AS FILESIZE, c.FILE_UPLOAD_COUNT, c.FILE_PATH, c.FILE_URL, c.FILE_PREFIX, c.FILE_TYPE,
+				c.FILE_WEB_DESC				
+			FROM
+				LETTNFILE a, LETTNFILEDETAIL b,DM_UPLOAD_FILE_MASTER c
+			WHERE
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND
+				a.FILE_ID		=	c.FILE_ID				
+			AND 
+				a.USE_AT = 'Y'
+ 		
+			<if test='searchCnd == "streFileNm"'>AND
+					b.STRE_FILE_NM LIKE '%${searchWrd}%' 		
+			</if>
+			<if test='searchCnd == "orignlFileNm"'>AND
+					b.ORIGNL_FILE_NM LIKE '%${searchWrd}%' 		
+			</if>	
+					
+			) TB ) TT WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+			ORDER BY ATCH_FILE_ID, FILE_SN			
+				 		
+ 	</select>
+
+ 	<select id="selectFileListCntByFileNm" parameterType="com.web.config.vo.FileVO" resultType="java.lang.Integer">
+ 		
+			SELECT 
+				COUNT(a.ATCH_FILE_ID)
+			FROM
+				LETTNFILE a, LETTNFILEDETAIL b, DM_UPLOAD_FILE_MASTER c
+			WHERE
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND 
+				a.USE_AT = 'Y'				
+			AND
+				a.FILE_ID		=	c.FILE_ID
+			<if test='searchCnd == "streFileNm"'>AND
+					b.STRE_FILE_NM LIKE '%${searchWrd}%' 		
+			</if>
+			<if test='searchCnd == "orignlFileNm"'>AND
+					b.ORIGNL_FILE_NM LIKE '%${searchWrd}%' 		
+			</if>	 		
+ 	</select>
+ 	
+  	<select id="selectImageFileList" parameterType="com.web.config.vo.FileVO" resultMap="fileList">
+ 		
+			SELECT 
+				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT, a.FILE_ID,
+				c.FILE_SIZE AS FILESIZE, c.FILE_UPLOAD_COUNT, c.FILE_PATH, c.FILE_URL, c.FILE_PREFIX, c.FILE_TYPE,
+				c.FILE_WEB_DESC					
+			FROM
+				LETTNFILE a, LETTNFILEDETAIL b, DM_UPLOAD_FILE_MASTER c
+			WHERE
+				a.ATCH_FILE_ID = #{atchFileId}
+			AND 
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND
+				a.FILE_ID = c.FILE_ID
+			AND
+				UPPER(b.FILE_EXTSN) IN ('GIF','JPG','BMP','PNG')
+			AND 
+				a.USE_AT = 'Y'
+			AND
+				c.FILE_TYPE = 'I'				
+			ORDER BY b.FILE_SN	
+ 		
+ 	</select>
+ 	
+ 	<select id="selectUploadFileInfo" parameterType="com.web.config.vo.FileVO" resultType="com.web.config.vo.FileVO">
+ 	
+		SELECT 
+		        FILE_ID             AS file_id,
+		        FILE_TYPE           AS file_type,
+		        FILE_DESC           AS file_desc,
+		        CREATE_DATE         AS create_date,
+		        CREATE_ID           AS create_id,
+		        FILE_SIZE           AS file_size,
+		        FILE_UPLOAD_COUNT   AS file_upload_count,
+		        FILE_PATH			AS file_path,
+		        FILE_URL			AS file_url,
+		        FILE_PREFIX			AS file_prefix,
+		        FILE_WEB_DESC		AS file_web_desc,		
+		        FILE_EXTEND_NAME_YN AS file_extend_name_yn        
+		FROM 
+			  		DM_UPLOAD_FILE_MASTER
+		WHERE
+						1=1
+		<if test="file_id !='' and file_id !=null">
+		AND	FILE_ID			=		#{file_id}	
+		</if>						
+ 	
+ 	</select>	
+ 	
+ 	<insert id="insertUploadFileMstr" parameterType="com.web.config.vo.FileVO">
+        INSERT INTO 
+        	DM_UPLOAD_FILE_MASTER 
+        		( FILE_ID,
+        			FILE_TYPE,
+        			FILE_DESC,
+        			CREATE_DATE,
+        			CREATE_ID,
+        			FILE_SIZE,
+        			FILE_UPLOAD_COUNT,
+        			FILE_PATH,
+        			FILE_URL,
+        			FILE_PREFIX,
+        			FILE_WEB_DESC
+        			 )
+		VALUES (
+				#{file_id} ,
+				#{file_type} ,
+				#{file_desc} ,
+				SYSDATE , 
+				#{create_id}, 
+				#{file_size}, 
+				#{file_upload_count},
+				#{file_path},
+				#{file_url},
+				#{file_prefix},
+				#{file_web_desc}
+				) 		
+ 	</insert>
+ 	
+ 	<select id="selectTmpFileIno" parameterType="com.web.config.vo.FileVO" resultType="com.web.config.vo.FileVO">
+ 		SELECT 
+ 			T1.ATCH_FILE_ID 	AS 	atchFileId,
+ 			T1.TEMP_ID			AS	temp_id,
+ 			T1.CREATE_DATE		AS	creatDt
+ 		FROM
+ 			DM_TEMP_FILE_ATTCH T1
+ 		WHERE
+ 			1=1
+ 		<if test="temp_id !='' and temp_id !=null">
+ 			AND T1.TEMP_ID = #{temp_id}
+ 			AND ROWNUM = 1
+ 		</if>
+ 	</select>
+ 	
+ 	<insert id="inserTmpFile" parameterType="com.web.config.vo.FileVO">
+ 		INSERT INTO DM_TEMP_FILE_ATTCH(ATCH_FILE_ID, 
+ 										TEMP_ID,
+ 										CREATE_DATE) 
+ 		VALUES(#{atchFileId}, 
+ 				#{temp_id}, 
+ 				SYSDATE)
+ 	</insert>
+ 	
+ 	<select id="fileIdList" parameterType="com.web.config.vo.FileVO" resultType="com.web.config.vo.FileVO">
+	    SELECT * FROM ( SELECT ROWNUM rn, TB.* FROM (
+			SELECT
+					T1.FILE_ID									AS "file_id",
+					T1.FILE_TYPE								AS "file_type",			
+					T1.FILE_DESC 								AS "file_desc",
+					T1.CREATE_DATE 								AS "create_date",
+					T1.FILE_SIZE 								AS "file_size",
+					T1.FILE_UPLOAD_COUNT 						AS "file_upload_count",
+					T1.FILE_PATH 								AS "file_path",
+					T1.FILE_URL 								AS "file_url",
+					T1.FILE_PREFIX 								AS "file_prefix",
+					T1.FILE_WEB_DESC							AS "file_web_desc"
+			FROM 
+				DM_UPLOAD_FILE_MASTER T1   
+			WHERE   
+				1 = 1
+				<if test="fileCn != null and fileCn !='' ">
+			  		AND T1.FILE_DESC LIKE '%게시판%'
+			  	</if>
+           		<if test="searchKeyword != null and searchKeyword !='' ">
+			  		AND T1.FILE_ID LIKE '%${searchKeyword}%'
+			  	</if>
+			  	<if test="file_type =='I'.toString()">
+			  		AND T1.FILE_TYPE = #{file_type}
+			  	</if>
+			ORDER BY   
+				T1.FILE_ID,  T1.CREATE_DATE
+	    ) TB ) TT  WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+	       
+	</select>
+	
+	<select id="getTotCnt" parameterType="com.web.config.vo.FileVO" resultType="int">
+		SELECT 
+			COUNT(T1.FILE_ID) AS "totcnt"
+		FROM 
+				DM_UPLOAD_FILE_MASTER T1   
+		WHERE   
+			1 = 1
+          	<if test="fileCn != null and fileCn !='' ">
+			  		AND T1.FILE_DESC LIKE '%게시판%'
+		  	</if>
+          		<if test="searchKeyword != null and searchKeyword !='' ">
+		  		AND T1.FILE_ID LIKE '%${searchKeyword}%'
+		  	</if>
+		
+	</select>
+	
+	<update id="fileIdUpdate" parameterType="com.web.config.vo.FileVO" >
+		UPDATE 
+			DM_UPLOAD_FILE_MASTER 
+		SET 
+			FILE_TYPE			= #{file_type},
+			FILE_DESC			= #{file_desc},
+			FILE_SIZE 			= #{file_size},
+			FILE_UPLOAD_COUNT 	= #{file_upload_count},
+			FILE_PATH 			= #{file_path},
+			FILE_URL 			= #{file_url},
+			FILE_PREFIX 		= #{file_prefix},
+			FILE_WEB_DESC		= #{file_web_desc},
+			UPDATE_ID 			= #{create_id},
+			UPDATE_DATE 		= SYSDATE
+		 WHERE 
+			FILE_ID 			= #{file_id}  
+	</update>
+	
+	<delete id="fileIdDelete" parameterType="com.web.config.vo.FileVO">
+		DELETE 
+			DM_UPLOAD_FILE_MASTER
+		 WHERE 
+		 	FILE_ID 			= #{file_id}
+	
+	</delete>
+	
+	<select id="fileIdDetail" parameterType="com.web.config.vo.FileVO" resultType="com.web.config.vo.FileVO">
+		SELECT
+				T1.FILE_ID									AS "file_id",
+				T1.FILE_TYPE								AS "file_type",			
+				T1.FILE_DESC 								AS "file_desc",
+				T1.CREATE_DATE 								AS "create_date",
+				T1.FILE_SIZE 								AS "file_size",
+				T1.FILE_UPLOAD_COUNT 						AS "file_upload_count",
+				T1.FILE_PATH 								AS "file_path",
+				T1.FILE_URL 								AS "file_url",
+				T1.FILE_PREFIX 								AS "file_prefix",
+				T1.FILE_WEB_DESC							AS "file_web_desc"
+		FROM 
+			DM_UPLOAD_FILE_MASTER T1   
+		WHERE   
+			FILE_ID 			= #{file_id} 
+	       
+	</select>
+ 	
+ 	<update id="updateStringId" parameterType="String">
+ 		UPDATE IDS SET
+ 			NEXT_ID = NEXT_ID + 1
+ 		WHERE TABLE_NAME = #{table_name}
+ 	</update>
+ 	
+ 	<select id="getNextStringId" parameterType="String" resultType="String">
+ 		SELECT
+ 			'FILE_'||LPAD(NEXT_ID,15,'0')
+ 		FROM IDS
+ 		WHERE TABLE_NAME = #{table_name}
+ 	</select>
+ 	
+ 	<select id="selectFileSn" parameterType="String" resultType="String">
+		SELECT
+			NVL(MAX(FILE_SN),0) AS FILE_SN
+		FROM LETTNFILEDETAIL
+		WHERE ATCH_FILE_ID =  #{atch_file_id}		
+ 	</select>
+</mapper>

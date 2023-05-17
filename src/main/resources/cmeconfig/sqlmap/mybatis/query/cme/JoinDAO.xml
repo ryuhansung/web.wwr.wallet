@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="JoinDAO">
+
+    <select id="selectUserJoinAuth" parameterType="com.web.front.join.vo.JoinVO" resultType="com.web.front.join.vo.JoinAuthVO">
+		SELECT
+            T1.USER_EMAIL as userEmail,
+			T1.EMAIL_CERT_YN as emailCertYn,
+            TO_CHAR(T1.EMAIL_CERT_DT,'YYYY/MM/DD HH24:MI:SS') as emailCertDt,
+            T1.SMS_CERT_YN as smsCertYn,
+            TO_CHAR(T1.SMS_CERT_DT,'YYYY/MM/DD HH24:MI:SS') as smsCertDt,
+            TO_CHAR(T1.REG_DT,'YYYY/MM/DD HH24:MI:SS')as regDt,
+            TO_CHAR(T1.UPT_DT,'YYYY/MM/DD HH24:MI:SS')as uptDt
+         FROM
+         	TW_10191021 T1
+         WHERE
+         	1=1
+            AND T1.USER_EMAIL = #{userEmail}
+ 	</select>
+
+    <insert id="insertNewUser" parameterType="com.web.front.join.vo.JoinVO">
+        INSERT INTO TW_10191020 (
+            USER_EMAIL,
+            USER_NM,
+            USER_PWD,
+            HPHONE,
+            GENDER,
+            AGE,
+            CHG_PWD,
+            TEST_YN,
+            FUD_YN,
+            REG_DT,
+            REG_EMAIL,
+            UPT_DT,
+            UPT_EMAIL,
+            USE_YN,
+            REG_IP,
+            LANG_CD
+        ) VALUES (
+            #{userEmail},
+            CRYPTO_ENCRYPT(#{userNm}),
+            #{userPwd},
+            #{hphone},
+            #{gender},
+            #{age},
+            #{chgPwd},
+            #{testYn},
+            #{fudYn},
+            SYSDATE,
+            #{regEmail},
+            #{uptDt},
+            #{uptEmail},
+            #{useYn},
+            #{regIp},
+            #{langCd}
+        )
+    </insert>
+
+    <insert id="insertCertInfo" parameterType="com.web.front.join.vo.JoinAuthVO">
+        INSERT INTO TW_10191021 (
+            USER_EMAIL,
+            EMAIL_CERT_YN,
+            EMAIL_CERT_DT,
+            SMS_CERT_YN,
+            SMS_CERT_DT,
+            REG_DT,
+            REG_EMAIL,
+            UPT_DT,
+            UPT_EMAIL
+        ) VALUES (
+            #{userEmail},
+            #{emailCertYn},
+            SYSDATE,
+            #{smsCertYn},
+            #{smsCertDt},
+            SYSDATE,
+            #{regEmail},
+            #{uptDt},
+            #{uptEmail}
+        )
+    </insert>
+
+    <update id="uptUserJoinAuth" parameterType="com.web.front.join.vo.JoinAuthVO">
+        UPDATE
+            TW_10191021
+        SET
+            <if test='emailCertYn != null and emailCertYn != ""'>
+            EMAIL_CERT_YN = #{emailCertYn},
+            EMAIL_CERT_DT = SYSDATE,
+            </if>
+            <if test='smsCertYn != null and smsCertYn != ""'>
+            SMS_CERT_YN = #{smsCertYn},
+            SMS_CERT_DT = SYSDATE,
+            </if>
+            UPT_EMAIL = #{uptEmail},
+            UPT_DT = SYSDATE
+        WHERE
+            1 = 1
+            AND USER_EMAIL = #{userEmail}
+    </update>
+
+    <select id="matchUserMobile" parameterType="com.web.front.join.vo.JoinVO" resultType="java.lang.Integer">
+        SELECT
+            COUNT(HPHONE)
+        FROM
+            TW_10191020
+        WHERE
+            1 = 1
+            AND HPHONE = #{hphone}
+    </select>
+
+</mapper>
